@@ -11,7 +11,7 @@ How to BUILD:
 mvn clean package
 
 How to RUN:
-java -jar target/inventory-0.0.1-SNAPSHOT.jar
+java -jar target/inventory-multi-level-0.0.1-SNAPSHOT.jar
 
 
 Here are entry URLs:
