@@ -4,6 +4,6 @@ import inventory.Category;
 
 import java.util.List;
 
-public interface CategoryQueryRepository {
+public interface CategoryQuery {
     List<Category> findByTopCategory();
 }

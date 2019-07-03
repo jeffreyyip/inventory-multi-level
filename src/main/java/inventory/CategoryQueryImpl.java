@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-public class CategoryQueryRepositoryImpl implements CategoryQueryRepository {
+public class CategoryQueryImpl implements CategoryQuery {
 
     @Autowired
     CategoryRepository categoryRepository;

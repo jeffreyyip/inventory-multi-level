@@ -79,4 +79,15 @@ public class CategoryTypeRepositoryTest {
 
     }
 
+    @Test
+    public void shouldRetrieveParentCategory(){
+        List<Category> parent = categoryRepository.findByCategoryType(CategoryType.CLOTHES);
+        List<Category> childCategories = categoryRepository.findByParentCategory(parent.get(0));
+
+        for (Category child: childCategories) {
+            Assert.assertTrue(child.getCategoryType().getParent()==CategoryType.CLOTHES);
+        }
+
+    }
+
 }
