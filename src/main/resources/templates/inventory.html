@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script>
+var subCategoryLink = {};
+
+function displayData(){
+    document.getElementById('inventoryList').innerHTML = '<p>Inventory Listing</p>';
+
+    fetch('http://localhost:8080/product')
+    .then( response => response.json())
+    .then( obj => obj._embedded.product)
+    .then( products => products.map( product => `<p>name: ${product.name},
+                                                    quantity: ${product.quantity},
+                                                    categoryType: ${product.categoryType},
+                                                    subCategory: ${product.subCategoryType}
+                                                    <button type="button" onClick="updateProduct('${product._links.self.href}', '${product.name}', '${product.quantity}', '${product.categoryType}', '${product.subCategoryType}');">Update</button>
+                                                    <button type="button" onClick="deleteProduct('${product._links.self.href}')">Delete</button>
+                                                    </p>
+                                                    `))
+    .then( rtn => rtn.map( p =>
+            document.getElementById('inventoryList').innerHTML += p
+        ))
+    .catch( err => console.log('there is error fetching products'));
+
+
+}
+
+function deleteProduct(link){
+    deleteProductLink(link).then( response => {console.log('response called'); displayData();} ).catch( err => {  displayData();} );
+}
+
+function deleteProductLink(link){
+
+    return     fetch(link, {
+           method: 'DELETE' } )
+    .then( response => {
+        if (!response.ok) { throw response };
+
+        return response.json();
+        }
+    )
+    .catch( err => { return Promise.reject()} );
+
+}
+
+function updateProduct(link, name, quantity, category, subCategory){
+
+    document.getElementById('displayForm').innerHTML = '';
+    var tags = '';
+
+    fetch('http://localhost:8080/categories/search/findByTopCategory')
+    .then( response => response.json() )
+    .then( obj => {
+                    tags += `<form id="inventoryForm" action="" onSubmit="updateForm('${link}');">`;
+                    tags += `Name: <input type ="text" name="name" value="${name}"></br>`;
+                    tags += `quantity: <input type ="text" name="quantity" value="${quantity}"></br>`;
+                    tags += 'Category: <select id="categorySelect" onChange="onChangeCategory();" name="categoryType"></br>' ;
+                    tags += '<option value="">select...</option></br>';
+                    return obj;
+            } )
+    .then( obj => obj._embedded.categories)
+    .then( obj => obj.forEach( item => { window.subCategoryLink[item.categoryType]=item._links.subCategories.href;
+                                         tags += `<option value="${item.categoryType}">${item.categoryType}</option></br>`;
+                                        }) )
+    .then( () => {tags += '</select></br>'} )
+    .then( () => {tags += 'SubCategory: <select id="subCategorySelect" name="subCategoryType"></select></br>'} )
+    .then( () => {tags += '<input type="submit" value="UPDATE"></form></br></br>'} )
+    .then( () => {document.getElementById('displayForm').innerHTML = tags;} )
+    .then( () => {setCategory(category);  } )
+    .then( () => {onChangeCategory(subCategory); } )
+    .catch( err => console.log('error in getting Top categories'));
+
+}
+
+function setCategory(category){
+    var doc = document.getElementById('categorySelect');
+    doc.value=category;
+}
+
+function setSubCategory(category){
+    var doc = document.getElementById('subCategorySelect');
+    doc.value=category;
+}
+
+function displayForm() {
+
+    document.getElementById('displayForm').innerHTML = '';
+    var tags = '';
+
+    fetch('http://localhost:8080/categories/search/findByTopCategory')
+    .then( response => response.json() )
+    .then( obj => {
+                    tags += '<form id="inventoryForm" action="" onSubmit="submitForm();">';
+                    tags += 'Name: <input type ="text" name="name"></br>';
+                    tags += 'quantity: <input type ="text" name="quantity"></br>';
+                    tags += 'Category: <select id="categorySelect" onChange="onChangeCategory();" name="categoryType"></br>' ;
+                    tags += '<option value="">select...</option></br>';
+                    return obj;
+            } )
+    .then( obj => obj._embedded.categories)
+    .then( obj => obj.forEach( item => { window.subCategoryLink[item.categoryType]=item._links.subCategories.href;
+                                         tags += `<option value="${item.categoryType}">${item.categoryType}</option></br>`;
+                                        }) )
+    .then( () => {tags += '</select></br>'} )
+    .then( () => {tags += 'SubCategory: <select id="subCategorySelect" name="subCategoryType"></select></br>'} )
+    .then( () => {tags += '<input type="submit" value="SUBMIT"></form></br></br>'} )
+    .then( () => {document.getElementById('displayForm').innerHTML = tags;} )
+    .catch( err => console.log('error in getting Top categories'));
+
+}
+
+function onChangeCategory(subCategory){
+    document.getElementById('subCategorySelect').innerHTML = '';
+
+    var category = document.getElementById("categorySelect").value;
+    var subCategoryLink = window.subCategoryLink[category];
+    var tags = '';
+
+    fetch(subCategoryLink)
+    .then( response => response.json() )
+    .then( obj => obj._embedded.categories )
+    .then( obj => obj.map( category => category.categoryType) )
+    .then( obj => obj.map( categoryType => `<option value="${categoryType}">${categoryType}</option></br>` ) )
+    .then( obj => obj.map( categoryOption => tags+= categoryOption ) )
+    .then( () => {document.getElementById('subCategorySelect').innerHTML = tags;} )
+    .then( () => {if (subCategory) { setSubCategory(subCategory); }} )
+    .catch( err => console.log('error in getting subCategories'));
+}
+
+function submitForm(){
+    var form = document.getElementById('inventoryForm');
+    var data = {};
+    data.name = form.name.value;
+    data.quantity = form.quantity.value;
+    data.categoryType = form.categoryType.value;
+    data.subCategoryType = form.subCategoryType.value;
+
+
+
+    submitProduct('http://localhost:8080/product', data)
+    .then( res => console.log('submitting ok') )
+    .catch( res => console.log('failed response.') );
+}
+
+function submitProduct(link, data){
+    return fetch(link, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify(data) } )
+    .then( response =>
+        {
+           if (!response.ok) { throw response };
+
+            return response.json();
+
+            })
+    .catch( err => {return Promise.reject();}  );
+
+}
+
+function updateForm(link){
+    var form = document.getElementById('inventoryForm');
+    var data = {};
+    data.name = form.name.value;
+    data.quantity = form.quantity.value;
+    data.categoryType = form.categoryType.value;
+    data.subCategoryType = form.subCategoryType.value;
+
+
+
+    fetch(link, {
+           method: 'PUT',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify(data) } )
+    .then( response => response.json() )
+    .catch( err => console.error('error: ', err) );
+
+}
+
+</script>
+</head>
+<body>
+<h1>Inventory application</h1>
+<div id=inventoryList></div>
+<div id=displayForm>
+</div>
+
+<button type="button" onclick="displayData()">List Product</button>
+<button type="button" onclick="displayForm()">Create Product</button>
+
+</body>
+</html>

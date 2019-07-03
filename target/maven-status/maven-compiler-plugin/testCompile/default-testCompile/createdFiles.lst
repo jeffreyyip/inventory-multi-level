@@ -1,0 +1,4 @@
+inventory/CategoryTypeRepositoryTest.class
+inventory/CategoryProductLinksTests.class
+inventory/InventoryApplicationTests.class
+inventory/validation/ProductRulesTest.class
